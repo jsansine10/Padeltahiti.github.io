@@ -52,7 +52,7 @@ const D=DATA[g],q=norm($('q').value.trim());
 const L=D.p.filter(p=>!q||p.k.includes(q));
 $('cnt').textContent=L.length+' joueur'+(L.length>1?'s':'')+(q?' trouvé'+(L.length>1?'s':''):'');
 if(!L.length){$('list').innerHTML='<div class="empty">Aucun joueur trouvé</div>';return}
-const sh=L.slice(0,q?200:100);
+const sh=L;
 $('list').innerHTML=sh.map(p=>{
 const o=open===g+p.n;
 let det='';
