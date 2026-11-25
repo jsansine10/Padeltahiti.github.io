@@ -42,6 +42,14 @@ input:focus{outline:2px solid var(--ac);border-color:transparent}
 .tag.nc{background:var(--ph);color:var(--mu)}
 .note{color:var(--mu);font-size:12.5px;margin:10px 0 0}
 .empty{text-align:center;color:var(--mu);padding:30px}
+:root{--k500:#eab308;--k500t:#a16207;--k250:#2563eb;--k100:#7c3aed;--k50:#db2777;--k25:#64748b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--k500:#facc15;--k500t:#facc15;--k250:#60a5fa;--k100:#a78bfa;--k50:#f472b6;--k25:#94a3b8}}
+:root[data-theme="dark"]{--k500:#facc15;--k500t:#facc15;--k250:#60a5fa;--k100:#a78bfa;--k50:#f472b6;--k25:#94a3b8}
+.k500{--cc:var(--k500);--cct:var(--k500t)}.k250{--cc:var(--k250)}.k100{--cc:var(--k100)}.k50{--cc:var(--k50)}.k25{--cc:var(--k25)}
+.p.kc{border-left:5px solid var(--cc)}
+.cat{display:inline-block;font-size:11px;font-weight:700;color:var(--cct,var(--cc));background:var(--ph);background:color-mix(in srgb,var(--cc) 16%,transparent);border-radius:6px;padding:1px 6px;margin-right:6px}
+.lgk{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.lgk[hidden]{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mu);background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:4px 10px}.chip i{width:10px;height:10px;border-radius:50%;background:var(--cc)}.chip b{color:var(--tx)}
 .mrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;color:var(--mu);font-size:14px}.mrow select{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
 .dl{font-size:13px;font-weight:700;white-space:nowrap;padding:3px 9px;border-radius:999px}.dl.u,.dl.n{color:var(--ac);background:var(--acs)}.dl.dn{color:#e5484d;background:rgba(229,72,77,.16)}.dl.z{color:var(--mu);background:var(--ph);font-weight:600}.pu{color:var(--ac);font-weight:700}.pdn{color:#e5484d;font-weight:700}
 .hs{margin-top:10px;padding-top:10px;border-top:2px solid var(--bd)}.hm{font-weight:700;font-size:12px;color:var(--mu);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}.hm i{font-style:normal;font-weight:400;text-transform:none;letter-spacing:0}
@@ -53,6 +61,7 @@ input:focus{outline:2px solid var(--ac);border-color:transparent}
 <div class="inst" id="inst" hidden><button id="ib" type="button">📲 Installer l’appli</button><span id="ih" hidden></span></div>
 <div class="tabs"><button id="bH" class="on">Hommes</button><button id="bF">Femmes</button></div>
 <div class="mrow"><label for="mo">Mois</label><select id="mo"></select></div>
+<div class="lgk" id="lgk" aria-label="Catégories selon le rang"></div>
 <div class="search"><input id="q" type="search" placeholder="Rechercher un joueur…" autocomplete="off"><button id="fb" type="button" aria-pressed="false">☆ Favoris</button></div>
 <div class="cnt" id="cnt"></div><div id="list"></div>
 <p class="note" id="nt"></p>
@@ -98,22 +107,26 @@ return '<div class="hs"><div class="hm">Évolution du classement et des points</
 function hist(p){const ks=keys();let h='<div class="hs"><div class="hm">Historique du classement</div>';ks.slice().reverse().forEach(k=>{const q=fq(k,p);if(q)h+='<div class="r"><div class="tn">'+mlab(k)+'</div><b>n° '+q.rk+' · '+q.p+' pts</b></div>'});if(ks.length<2)h+='<p class="note">L’historique se construira au fil des mois.</p>';return h+'</div>'}
 const TC={1:['#f2b705','#b98700','or'],2:['#c3cad5','#8a94a4','argent'],3:['#d9843b','#9a5418','bronze']};
 const trophy=r=>{const c=TC[r];return '<svg viewBox="0 0 24 24" role="img" aria-label="Trophée '+c[2]+', rang '+r+'"><path d="M7 4H4v2.5A3.5 3.5 0 0 0 7.5 10M17 4h3v2.5a3.5 3.5 0 0 1-3.5 3.5" fill="none" stroke="'+c[1]+'" stroke-width="1.6" stroke-linecap="round"/><path d="M7 3h10v6.5a5 5 0 0 1-10 0z" fill="'+c[0]+'" stroke="'+c[1]+'" stroke-width="1"/><rect x="11" y="14" width="2" height="4" fill="'+c[1]+'"/><rect x="7.5" y="18" width="9" height="3" rx="1" fill="'+c[0]+'" stroke="'+c[1]+'" stroke-width="1"/><text x="12" y="9.6" text-anchor="middle" font-size="7" font-weight="800" fill="#1b1b1b" font-family="system-ui,sans-serif">'+r+'</text></svg>'};
+const CATS={H:[[50,'P500','k500'],[150,'P250','k250'],[200,'P100','k100'],[300,'P50','k50'],[1e9,'P25','k25']],
+F:[[15,'P500','k500'],[75,'P250','k250'],[100,'P100','k100'],[150,'P50','k50'],[1e9,'P25','k25']]};
+const cat=r=>CATS[g].find(c=>r<=c[0]);
+const lgk=G=>CATS[G].map((c,i)=>{const a=i?CATS[G][i-1][0]+1:1;return '<span class="chip '+c[2]+'"><i></i><b>'+c[1]+'</b> '+(c[0]>1e8?a+' et +':a===c[0]?a:a+' à '+c[0])+'</span>'}).join('');
 const fmt=d=>{const[y,m,j]=d.split('-');return j+'/'+m+'/'+y};
 function prep(){for(const sn of Object.values(SNAPS))for(const k of['H','F']){const L=sn[k].p;let rk=0;L.forEach((p,i)=>{if(i===0||p.p!==L[i-1].p)rk=i+1;p.rk=p.c||rk;p.k=norm(p.n);
 const T=sn[k].t,top=[...p.r].filter(x=>!T[x[0]].x).sort((a,b)=>b[1]-a[1]).slice(0,sn[k].m||8).map(x=>x[0]);p.top=new Set(top)});sn[k].ix={};sn[k].ix2={};L.forEach(p=>{sn[k].ix[n1(p.n)]=p;const z=n2(p.n);sn[k].ix2[z]=sn[k].ix2[z]===undefined?p:null})}}
 function render(){
-$('mt').textContent=mlab(cur);const D=S()[g],q=norm($('q').value.trim());$('nt').textContent=D.m?'Pour ce mois, le total est la somme de tous les résultats.':'Le total correspond aux 8 meilleurs résultats des 12 derniers mois. Les résultats qui ne comptent pas dans le total sont grisés.';
+$('mt').textContent=mlab(cur);$('lgk').hidden=false;$('lgk').innerHTML=lgk(g);const D=S()[g],q=norm($('q').value.trim());$('nt').textContent=D.m?'Pour ce mois, le total est la somme de tous les résultats.':'Le total correspond aux 8 meilleurs résultats des 12 derniers mois. Les résultats qui ne comptent pas dans le total sont grisés.';
 const L=D.p.filter(p=>(!q||p.k.includes(q))&&(!favOnly||FAV.has(fk(p))));
 const fc=favCount();$('fb').textContent=(favOnly||fc?'★':'☆')+' Favoris'+(fc?' ('+fc+')':'');$('fb').classList.toggle('on',favOnly);$('fb').setAttribute('aria-pressed',favOnly);
 $('cnt').textContent=favOnly?L.length+' favori'+(L.length>1?'s':''):L.length+' joueur'+(L.length>1?'s':'')+(q?' trouvé'+(L.length>1?'s':''):'');
 if(!L.length){$('list').innerHTML='<div class="empty">'+(favOnly&&!q?'Aucun favori pour le moment.<br>Touchez ☆ à droite d’un joueur pour l’ajouter.':'Aucun joueur trouvé')+'</div>';return}
 $('list').innerHTML=L.map(p=>{
-const o=open===g+p.n,fv=FAV.has(fk(p));
+const o=open===g+p.n,fv=FAV.has(fk(p)),c=cat(p.rk);
 let det='';
 if(o){const rs=[...p.r].sort((a,b)=>D.t[b[0]].d.localeCompare(D.t[a[0]].d)||b[1]-a[1]);
 det='<div class="d">'+rs.map(([t,v])=>{const T=D.t[t],c=p.top.has(t);
 return '<div class="r '+(c?'yes':'no')+'"><div class="tn">'+T.n.replace(/&/g,'&amp;')+(c?'<span class="tag">compte</span>':T.x?'<span class="tag nc">pas encore compté</span>':'')+'<small>'+fmt(T.d)+'</small></div><b>+'+v+' pts</b></div>'}).join('')+charts(p)+hist(p)+'</div>'}
-return '<div class="p'+(o?' open':'')+'"><div class="hw"><button class="h" data-n="'+p.n.replace(/"/g,'&quot;')+'">'+(p.rk<=3?'<span class="rk tr">'+trophy(p.rk)+'</span>':'<span class="rk">'+p.rk+'</span>')+'<span class="nm">'+p.n.replace(/&/g,'&amp;')+'<small>'+p.r.length+' tournoi'+(p.r.length>1?'s':'')+'</small></span>'+dl(p)+'<span class="pt">'+p.p+'<small>'+pd(p)+'</small></span></button><button class="fv'+(fv?' on':'')+'" data-f="'+fk(p).replace(/"/g,'&quot;')+'" aria-pressed="'+fv+'" aria-label="'+(fv?'Retirer des favoris':'Ajouter aux favoris')+'">'+(fv?'★':'☆')+'</button></div>'+det+'</div>'}).join('')}
+return '<div class="p'+(o?' open':'')+(c?' kc '+c[2]:'')+'"><div class="hw"><button class="h" data-n="'+p.n.replace(/"/g,'&quot;')+'">'+(p.rk<=3?'<span class="rk tr">'+trophy(p.rk)+'</span>':'<span class="rk">'+p.rk+'</span>')+'<span class="nm">'+p.n.replace(/&/g,'&amp;')+'<small>'+(c?'<span class="cat">'+c[1]+'</span>':'')+p.r.length+' tournoi'+(p.r.length>1?'s':'')+'</small></span>'+dl(p)+'<span class="pt">'+p.p+'<small>'+pd(p)+'</small></span></button><button class="fv'+(fv?' on':'')+'" data-f="'+fk(p).replace(/"/g,'&quot;')+'" aria-pressed="'+fv+'" aria-label="'+(fv?'Retirer des favoris':'Ajouter aux favoris')+'">'+(fv?'★':'☆')+'</button></div>'+det+'</div>'}).join('')}
 $('list').addEventListener('click',e=>{const f=e.target.closest('.fv');if(f){const k=f.dataset.f;FAV.has(k)?FAV.delete(k):FAV.add(k);saveFav();render();return}
 const b=e.target.closest('.h');if(!b)return;const k=g+b.dataset.n;open=open===k?null:k;render()});
 $('fb').onclick=()=>{favOnly=!favOnly;open=null;render()};
